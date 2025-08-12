@@ -30,8 +30,16 @@ struct ContentView: View {
             Divider()
 
             HStack {
-                SettingsLink {
-                    Text("Preferences…")
+                if #available(macOS 14.0, *) {
+                    SettingsLink { Text("Preferences…") }
+                } else {
+                    Button("Preferences…") {
+                        if #available(macOS 13.0, *) {
+                            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                        } else {
+                            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+                        }
+                    }
                 }
                 Spacer()
                 Toggle("Start at login", isOn: $loginAtStart)
@@ -42,9 +50,7 @@ struct ContentView: View {
         }
         .padding(12)
         .frame(minWidth: 300)
-        .onAppear {
-            ptt.setupHotkey()
-        }
+        .onAppear { ptt.setupHotkey() }
     }
 }
 
