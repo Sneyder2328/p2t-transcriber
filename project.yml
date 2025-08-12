@@ -1,0 +1,27 @@
+name: P2TTranscriber
+options:
+  deploymentTarget:
+    macOS: "13.0"
+settings:
+  base:
+    PRODUCT_BUNDLE_IDENTIFIER: com.sneyder.p2t
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: 5.9
+    INFOPLIST_FILE: Resources/Info.plist
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    OTHER_LDFLAGS: "$(inherited) -framework Carbon -framework AVFoundation -framework ApplicationServices -framework ServiceManagement"
+targets:
+  P2TTranscriber:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: Sources
+    resources:
+      - path: Resources
+    settings:
+      base:
+        PRODUCT_NAME: P2TTranscriber
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1.0
+        MACOSX_DEPLOYMENT_TARGET: 13.0
