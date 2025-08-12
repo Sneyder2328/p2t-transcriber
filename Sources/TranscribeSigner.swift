@@ -28,8 +28,7 @@ final class TranscribeSigner {
         var query: [String: String] = [
             "language-code": languageCode,
             "media-encoding": mediaEncoding,
-            "sample-rate": String(sampleRate),
-            "X-Amz-Content-Sha256": "UNSIGNED-PAYLOAD"
+            "sample-rate": String(sampleRate)
         ]
         for (k, v) in extraParams { query[k] = v }
 
@@ -54,7 +53,7 @@ final class TranscribeSigner {
             canonicalQuery,
             canonicalHeaders,
             signedHeaders,
-            "UNSIGNED-PAYLOAD"
+            Self.hexSha256("")
         ].joined(separator: "\n")
 
         let stringToSign = [

@@ -9,10 +9,14 @@ final class TranscribeStreamer: NSObject {
     private var webSocket: URLSessionWebSocketTask?
     private var urlSession: URLSession!
     private var accumulatedText: String = ""
+    private var isOpen: Bool = false
+    private var pendingChunks: [Data] = []
+    private var negotiatedSampleRate: Int = 16000
 
     private func signer(region: String) -> TranscribeSigner { TranscribeSigner(region: region) }
 
-    func start(languageCode: String) {
+    func start(languageCode: String, sampleRate: Int) {
+        negotiatedSampleRate = sampleRate
         guard let creds = CredentialsStore.shared.load() else { return }
 
         var extras: [String: String] = [:]
@@ -20,6 +24,7 @@ final class TranscribeStreamer: NSObject {
             extras["enable-partial-results-stabilization"] = "true"
             extras["partial-results-stability"] = PreferencesManager.shared.stabilityLevel
         }
+        extras["sample-rate"] = String(sampleRate)
 
         let region = PreferencesManager.shared.region
         let s = signer(region: region)
@@ -27,18 +32,25 @@ final class TranscribeStreamer: NSObject {
         if PreferencesManager.shared.logHandshakeURL { print("Presigned URL: \(url.absoluteString)") }
 
         let config = URLSessionConfiguration.default
+        config.httpAdditionalHeaders = [
+            "Origin": "https://transcribestreaming.\(region).amazonaws.com"
+        ]
         urlSession = URLSession(configuration: config, delegate: self, delegateQueue: OperationQueue())
-        var request = URLRequest(url: url)
-        request.setValue("aws.transcribe", forHTTPHeaderField: "Sec-WebSocket-Protocol")
-        request.setValue("https://transcribestreaming.\(region).amazonaws.com", forHTTPHeaderField: "Origin")
-        let task = urlSession.webSocketTask(with: request)
+        let task = urlSession.webSocketTask(with: url, protocols: ["aws.transcribe"]) // negotiate subprotocol
         webSocket = task
+        isOpen = false
+        pendingChunks.removeAll()
         task.resume()
         listen()
     }
 
     func sendPcm(_ data: Data) {
-        webSocket?.send(.data(data)) { error in
+        guard let webSocket else { return }
+        if !isOpen {
+            pendingChunks.append(data)
+            return
+        }
+        webSocket.send(.data(data)) { error in
             if let error { print("ws send error: \(error)") }
         }
     }
@@ -49,6 +61,8 @@ final class TranscribeStreamer: NSObject {
         urlSession.invalidateAndCancel()
         let text = accumulatedText.trimmingCharacters(in: .whitespacesAndNewlines)
         accumulatedText = ""
+        isOpen = false
+        pendingChunks.removeAll()
         completion(text)
     }
 
@@ -61,11 +75,9 @@ final class TranscribeStreamer: NSObject {
             case .success(let message):
                 switch message {
                 case .string(let s):
-                    self.handleMessage(text: s)
+                    self.handleTranscriptJSON(text: s)
                 case .data(let d):
-                    if let s = String(data: d, encoding: .utf8) {
-                        self.handleMessage(text: s)
-                    }
+                    if let s = String(data: d, encoding: .utf8) { self.handleTranscriptJSON(text: s) }
                 @unknown default:
                     break
                 }
@@ -74,24 +86,18 @@ final class TranscribeStreamer: NSObject {
         }
     }
 
-    private func handleMessage(text: String) {
+    private func handleTranscriptJSON(text: String) {
         guard let data = text.data(using: .utf8) else { return }
         let decoder = JSONDecoder()
         if let event = try? decoder.decode(AWSEvent.self, from: data), let tr = event.Transcript {
             for result in tr.Results where result.IsPartial == false {
-                if let alt = result.Alternatives.first {
-                    if !alt.Transcript.isEmpty {
-                        if !accumulatedText.isEmpty { accumulatedText += " " }
-                        accumulatedText += alt.Transcript
-                    }
+                if let alt = result.Alternatives.first, !alt.Transcript.isEmpty {
+                    if !accumulatedText.isEmpty { accumulatedText += " " }
+                    accumulatedText += alt.Transcript
                 }
             }
-        } else {
-            if let json = try? JSONSerialization.jsonObject(with: data, options: []) {
-                print("ws message: \(json)")
-            } else {
-                print("ws raw: \(text)")
-            }
+        } else if PreferencesManager.shared.logHandshakeURL {
+            print("ws raw: \(text)")
         }
     }
 }
@@ -99,11 +105,17 @@ final class TranscribeStreamer: NSObject {
 extension TranscribeStreamer: URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol `protocol`: String?) {
         print("WebSocket opened, protocol=\(`protocol` ?? "nil")")
+        isOpen = true
+        while !pendingChunks.isEmpty {
+            let chunk = pendingChunks.removeFirst()
+            sendPcm(chunk)
+        }
     }
 
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         let reasonStr = reason.flatMap { String(data: $0, encoding: .utf8) } ?? ""
         print("WebSocket closed: code=\(closeCode.rawValue) reason=\(reasonStr)")
+        isOpen = false
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {

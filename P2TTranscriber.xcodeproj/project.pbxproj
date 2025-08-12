@@ -18,6 +18,7 @@
 		AE7AC40F1D7A9DD9B78AE084 /* Hotkey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B3C317A34C961CEB33A26F8 /* Hotkey.swift */; };
 		BB802164966F2F0C27238B99 /* TranscribeStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7D6B700C88D152777EFA92 /* TranscribeStreamer.swift */; };
 		CE1556075DC110E9EBC4A9BE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E64B3671AD495B1AB6C91B95 /* ContentView.swift */; };
+		D20D514ACA782B9CF6394A7E /* AWSEventStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C7E9ABC2AFBD4272F0BB98 /* AWSEventStream.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,6 +26,7 @@
 		4145D5320CF09996E8061525 /* LoginItemManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemManager.swift; sourceTree = "<group>"; };
 		44227CE9E73221D412230390 /* AudioInputManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioInputManager.swift; sourceTree = "<group>"; };
 		4D067BBC113E4771036C649A /* TextInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInjector.swift; sourceTree = "<group>"; };
+		63C7E9ABC2AFBD4272F0BB98 /* AWSEventStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSEventStream.swift; sourceTree = "<group>"; };
 		659301DC2423D8901A980738 /* TranscribeSigner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscribeSigner.swift; sourceTree = "<group>"; };
 		68D3AD32737AEF32829AE410 /* PreferencesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesManager.swift; sourceTree = "<group>"; };
 		9B3C317A34C961CEB33A26F8 /* Hotkey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hotkey.swift; sourceTree = "<group>"; };
@@ -48,6 +50,7 @@
 			isa = PBXGroup;
 			children = (
 				44227CE9E73221D412230390 /* AudioInputManager.swift */,
+				63C7E9ABC2AFBD4272F0BB98 /* AWSEventStream.swift */,
 				E64B3671AD495B1AB6C91B95 /* ContentView.swift */,
 				CCB45CD7D727AADD8C8F8605 /* CredentialsStore.swift */,
 				9B3C317A34C961CEB33A26F8 /* Hotkey.swift */,
@@ -128,6 +131,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D20D514ACA782B9CF6394A7E /* AWSEventStream.swift in Sources */,
 				543AC128AF8B57A61AFE515A /* AudioInputManager.swift in Sources */,
 				CE1556075DC110E9EBC4A9BE /* ContentView.swift in Sources */,
 				3CFB745E017B6DCA588E206E /* CredentialsStore.swift in Sources */,
