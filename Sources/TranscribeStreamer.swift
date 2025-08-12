@@ -26,7 +26,7 @@ final class TranscribeStreamer: NSObject {
         }
         let config = URLSessionConfiguration.default
         urlSession = URLSession(configuration: config, delegate: self, delegateQueue: OperationQueue())
-        let task = urlSession.webSocketTask(with: url)
+        let task = urlSession.webSocketTask(with: url, protocols: ["aws.transcribe"]) // required subprotocol
         webSocket = task
         task.resume()
         listen()
@@ -81,16 +81,28 @@ final class TranscribeStreamer: NSObject {
                     }
                 }
             }
+        } else {
+            // Print server-side close/error JSON if any
+            if let json = try? JSONSerialization.jsonObject(with: data, options: []) {
+                print("ws message: \(json)")
+            } else {
+                print("ws raw: \(text)")
+            }
         }
     }
 }
 
 extension TranscribeStreamer: URLSessionWebSocketDelegate {
-    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
-        // Connected
+    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol `protocol`: String?) {
+        print("WebSocket opened, protocol=\(`protocol` ?? "nil")")
     }
 
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
-        // Closed
+        let reasonStr = reason.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        print("WebSocket closed: code=\(closeCode.rawValue) reason=\(reasonStr)")
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if let error { print("WebSocket completed with error: \(error)") }
     }
 }
