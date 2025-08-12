@@ -35,6 +35,8 @@ final class PreferencesManager {
         static let capitalize = "prefs.capitalize"
         static let stabilization = "prefs.stabilization"
         static let stabilityLevel = "prefs.stabilityLevel"
+        static let region = "prefs.region"
+        static let logHandshake = "prefs.logHandshake"
     }
 
     var languageCode: String {
@@ -65,5 +67,15 @@ final class PreferencesManager {
     var stabilityLevel: String {
         get { defaults.string(forKey: Keys.stabilityLevel) ?? "high" }
         set { defaults.set(newValue, forKey: Keys.stabilityLevel) }
+    }
+
+    var region: String {
+        get { defaults.string(forKey: Keys.region) ?? "us-east-1" }
+        set { defaults.set(newValue, forKey: Keys.region) }
+    }
+
+    var logHandshakeURL: Bool {
+        get { defaults.object(forKey: Keys.logHandshake) as? Bool ?? false }
+        set { defaults.set(newValue, forKey: Keys.logHandshake) }
     }
 }

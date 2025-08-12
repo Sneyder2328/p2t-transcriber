@@ -22,13 +22,14 @@ final class TranscribeSigner {
         mediaEncoding: String = "pcm",
         extraParams: [String: String] = [:]
     ) -> URL? {
-        let host = "transcribestreaming." + region + ".amazonaws.com:8443"
-        let endpoint = "wss://" + host + "/stream-transcription-websocket"
+        let hostWithPort = "transcribestreaming." + region + ".amazonaws.com:8443"
+        let endpoint = "wss://" + hostWithPort + "/stream-transcription-websocket"
 
         var query: [String: String] = [
             "language-code": languageCode,
             "media-encoding": mediaEncoding,
-            "sample-rate": String(sampleRate)
+            "sample-rate": String(sampleRate),
+            "X-Amz-Content-Sha256": "UNSIGNED-PAYLOAD"
         ]
         for (k, v) in extraParams { query[k] = v }
 
@@ -45,7 +46,7 @@ final class TranscribeSigner {
         if let token = credentials.sessionToken { query["X-Amz-Security-Token"] = token }
 
         let canonicalQuery = Self.canonicalQueryString(query, encodeValues: true)
-        let canonicalHeaders = "host:\(host)\n"
+        let canonicalHeaders = "host:\(hostWithPort)\n"
         let signedHeaders = "host"
         let canonicalRequest = [
             "GET",
@@ -53,7 +54,7 @@ final class TranscribeSigner {
             canonicalQuery,
             canonicalHeaders,
             signedHeaders,
-            Self.hexSha256("")
+            "UNSIGNED-PAYLOAD"
         ].joined(separator: "\n")
 
         let stringToSign = [

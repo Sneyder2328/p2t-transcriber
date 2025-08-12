@@ -10,7 +10,7 @@ final class TranscribeStreamer: NSObject {
     private var urlSession: URLSession!
     private var accumulatedText: String = ""
 
-    private let signer = TranscribeSigner(region: "us-east-1")
+    private func signer(region: String) -> TranscribeSigner { TranscribeSigner(region: region) }
 
     func start(languageCode: String) {
         guard let creds = CredentialsStore.shared.load() else { return }
@@ -21,12 +21,17 @@ final class TranscribeStreamer: NSObject {
             extras["partial-results-stability"] = PreferencesManager.shared.stabilityLevel
         }
 
-        guard let url = signer.presignWebsocketUrl(credentials: creds, languageCode: languageCode, extraParams: extras) else {
-            return
-        }
+        let region = PreferencesManager.shared.region
+        let s = signer(region: region)
+        guard let url = s.presignWebsocketUrl(credentials: creds, languageCode: languageCode, extraParams: extras) else { return }
+        if PreferencesManager.shared.logHandshakeURL { print("Presigned URL: \(url.absoluteString)") }
+
         let config = URLSessionConfiguration.default
         urlSession = URLSession(configuration: config, delegate: self, delegateQueue: OperationQueue())
-        let task = urlSession.webSocketTask(with: url, protocols: ["aws.transcribe"]) // required subprotocol
+        var request = URLRequest(url: url)
+        request.setValue("aws.transcribe", forHTTPHeaderField: "Sec-WebSocket-Protocol")
+        request.setValue("https://transcribestreaming.\(region).amazonaws.com", forHTTPHeaderField: "Origin")
+        let task = urlSession.webSocketTask(with: request)
         webSocket = task
         task.resume()
         listen()
@@ -82,7 +87,6 @@ final class TranscribeStreamer: NSObject {
                 }
             }
         } else {
-            // Print server-side close/error JSON if any
             if let json = try? JSONSerialization.jsonObject(with: data, options: []) {
                 print("ws message: \(json)")
             } else {

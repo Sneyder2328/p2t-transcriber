@@ -7,6 +7,8 @@ struct PreferencesView: View {
     @State private var capitalize: Bool = PreferencesManager.shared.capitalize
     @State private var stabilization: Bool = PreferencesManager.shared.stabilization
     @State private var stabilityLevel: String = PreferencesManager.shared.stabilityLevel
+    @State private var region: String = PreferencesManager.shared.region
+    @State private var logHandshake: Bool = PreferencesManager.shared.logHandshakeURL
 
     @State private var accessKeyId: String = ""
     @State private var secretAccessKey: String = ""
@@ -19,9 +21,16 @@ struct PreferencesView: View {
         "en-US","es-US","es-ES","es-MX","fr-FR","de-DE","it-IT","pt-BR","ja-JP"
     ]
 
+    private let regions: [String] = [
+        "us-east-1","us-west-2","eu-west-1","eu-central-1","ap-southeast-1","ap-northeast-1"
+    ]
+
     var body: some View {
         TabView {
             Form {
+                Picker("Region", selection: $region) {
+                    ForEach(regions, id: \.self) { Text($0) }
+                }
                 Picker("Language", selection: $languageCode) {
                     ForEach(languages, id: \.self) { Text($0) }
                 }
@@ -36,6 +45,7 @@ struct PreferencesView: View {
                         Text("low").tag("low"); Text("medium").tag("medium"); Text("high").tag("high")
                     }
                 }
+                Toggle("Log handshake URL (debug)", isOn: $logHandshake)
                 Toggle("Start at login", isOn: $loginAtStart)
                     .onChange(of: loginAtStart) { val in _ = LoginItemManager.setEnabled(val) }
             }
@@ -43,8 +53,8 @@ struct PreferencesView: View {
             .tabItem { Label("General", systemImage: "gearshape") }
 
             Form {
-                SecureField("Secret Access Key", text: $secretAccessKey)
                 TextField("Access Key ID", text: $accessKeyId)
+                SecureField("Secret Access Key", text: $secretAccessKey)
                 TextField("Session Token (optional)", text: $sessionToken)
                 HStack {
                     Spacer()
@@ -56,7 +66,7 @@ struct PreferencesView: View {
             .onAppear { loadCreds() }
             .tabItem { Label("AWS", systemImage: "key.fill") }
         }
-        .frame(width: 460, height: 360)
+        .frame(width: 480, height: 380)
         .onDisappear { persist() }
     }
 
@@ -67,6 +77,8 @@ struct PreferencesView: View {
         PreferencesManager.shared.capitalize = capitalize
         PreferencesManager.shared.stabilization = stabilization
         PreferencesManager.shared.stabilityLevel = stabilityLevel
+        PreferencesManager.shared.region = region
+        PreferencesManager.shared.logHandshakeURL = logHandshake
         Hotkey.shared.updateModifier(modifier)
     }
 
@@ -82,8 +94,8 @@ struct PreferencesView: View {
         guard !accessKeyId.isEmpty, !secretAccessKey.isEmpty else {
             savedBanner = "Please enter Access Key ID and Secret Key"; return
         }
-        CredentialsStore.shared.save(accessKeyId: accessKeyId, secretAccessKey: secretAccessKey, sessionToken: sessionToken.isEmpty ? nil : sessionToken)
-        savedBanner = "Saved to Keychain"
+        let ok = CredentialsStore.shared.save(accessKeyId: accessKeyId, secretAccessKey: secretAccessKey, sessionToken: sessionToken.isEmpty ? nil : sessionToken)
+        savedBanner = ok ? "Saved to Keychain" : "Failed to save to Keychain (see console)"
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { savedBanner = nil }
     }
 }
