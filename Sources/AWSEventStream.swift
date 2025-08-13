@@ -10,7 +10,7 @@ public struct EventStreamMessage {
 }
 
 public final class AWSEventStreamCodec {
-    private enum HeaderType: UInt8 { case boolTrue = 0, boolFalse = 1, byte = 2, int16 = 3, int32 = 4, int64 = 5, byteArray = 6, string = 7, timestamp = 8, uuid = 9 }
+    private enum HeaderType: UInt8 { case string = 7 }
 
     public static func encode(headers: [String: EventStreamHeaderValue], payload: Data) -> Data {
         var headersData = Data()
@@ -42,23 +42,30 @@ public final class AWSEventStreamCodec {
         return out
     }
 
-    public static func decodeAll(from data: Data) -> [EventStreamMessage] {
+    public static func decodeAvailable(from buffer: inout Data) -> [EventStreamMessage] {
         var messages: [EventStreamMessage] = []
         var offset = 0
-        while offset + 16 <= data.count {
-            let totalLen = Int(readUInt32BE(data, offset: offset)); offset += 4
-            let headersLen = Int(readUInt32BE(data, offset: offset)); offset += 4
-            offset += 4 // prelude CRC
-            guard offset + headersLen <= data.count else { break }
-            let headersSlice = data.subdata(in: offset..<(offset + headersLen)); offset += headersLen
+        while true {
+            guard buffer.count - offset >= 16 else { break }
+            let totalLen = Int(readUInt32BE(buffer, offset: offset))
+            let headersLen = Int(readUInt32BE(buffer, offset: offset + 4))
+            guard totalLen >= 16 && headersLen >= 0 else { break }
+            guard buffer.count - offset >= totalLen else { break }
+
+            let headersStart = offset + 12
+            let payloadStart = headersStart + headersLen
             let payloadLen = max(0, totalLen - 12 - headersLen - 4)
-            guard offset + payloadLen + 4 <= data.count else { break }
-            let payload = data.subdata(in: offset..<(offset + payloadLen)); offset += payloadLen
-            offset += 4 // message CRC
+            guard headersStart >= 0 && payloadStart >= 0 && payloadLen >= 0 else { break }
+            guard headersStart + headersLen <= buffer.count && payloadStart + payloadLen <= buffer.count else { break }
+
+            guard let headersSlice = slice(buffer, offset: headersStart, length: headersLen) else { break }
+            guard let payload = slice(buffer, offset: payloadStart, length: payloadLen) else { break }
 
             let headers = decodeHeaders(headersSlice)
             messages.append(EventStreamMessage(headers: headers, payload: payload))
+            offset += totalLen
         }
+        if offset > 0 { buffer.removeFirst(offset) }
         return messages
     }
 
@@ -66,18 +73,21 @@ public final class AWSEventStreamCodec {
         var headers: [String: EventStreamHeaderValue] = [:]
         var i = 0
         while i < data.count {
+            guard i + 1 <= data.count else { break }
             let keyLen = Int(data[i]); i += 1
             guard i + keyLen <= data.count else { break }
-            let key = String(data: data.subdata(in: i..<(i + keyLen)), encoding: .utf8) ?? ""
+            let keyData = slice(data, offset: i, length: keyLen) ?? Data()
+            let key = String(data: keyData, encoding: .utf8) ?? ""
             i += keyLen
-            guard i < data.count else { break }
+            guard i + 1 <= data.count else { break }
             let type = data[i]; i += 1
             switch type {
-            case 7: // string
+            case HeaderType.string.rawValue:
                 guard i + 2 <= data.count else { break }
                 let len = Int(readUInt16BE(data, offset: i)); i += 2
                 guard i + len <= data.count else { break }
-                let value = String(data: data.subdata(in: i..<(i + len)), encoding: .utf8) ?? ""
+                let valueData = slice(data, offset: i, length: len) ?? Data()
+                let value = String(data: valueData, encoding: .utf8) ?? ""
                 i += len
                 headers[key] = .string(value)
             default:
@@ -87,13 +97,36 @@ public final class AWSEventStreamCodec {
         return headers
     }
 
-    private static func readUInt32BE(_ data: Data, offset: Int) -> UInt32 {
-        let slice = data.subdata(in: offset..<(offset + 4))
-        return slice.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
+    private static func slice(_ data: Data, offset: Int, length: Int) -> Data? {
+        guard offset >= 0 && length >= 0 && offset + length <= data.count else { return nil }
+        return data.withUnsafeBytes { raw in
+            let base = raw.bindMemory(to: UInt8.self).baseAddress!
+            return Data(bytes: base + offset, count: length)
+        }
     }
+
+    private static func readUInt32BE(_ data: Data, offset: Int) -> UInt32 {
+        return data.withUnsafeBytes { raw -> UInt32 in
+            guard offset + 4 <= raw.count else { return 0 }
+            let base = raw.bindMemory(to: UInt8.self).baseAddress!
+            let p = base + offset
+            let b0 = UInt32(p[0])
+            let b1 = UInt32(p[1])
+            let b2 = UInt32(p[2])
+            let b3 = UInt32(p[3])
+            return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
+        }
+    }
+
     private static func readUInt16BE(_ data: Data, offset: Int) -> UInt16 {
-        let slice = data.subdata(in: offset..<(offset + 2))
-        return slice.withUnsafeBytes { $0.load(as: UInt16.self).bigEndian }
+        return data.withUnsafeBytes { raw -> UInt16 in
+            guard offset + 2 <= raw.count else { return 0 }
+            let base = raw.bindMemory(to: UInt8.self).baseAddress!
+            let p = base + offset
+            let b0 = UInt16(p[0])
+            let b1 = UInt16(p[1])
+            return (b0 << 8) | b1
+        }
     }
 
     private static let crcTable: [UInt32] = {

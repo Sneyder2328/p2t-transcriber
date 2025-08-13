@@ -3,7 +3,7 @@ import Foundation
 private struct AWSAlternative: Codable { let Transcript: String }
 private struct AWSResult: Codable { let Alternatives: [AWSAlternative]; let IsPartial: Bool }
 private struct AWSTranscriptObj: Codable { let Results: [AWSResult] }
-private struct AWSEvent: Codable { let Transcript: AWSTranscriptObj? }
+private struct AWSTranscriptEnvelope: Codable { let Transcript: AWSTranscriptObj? }
 
 final class TranscribeStreamer: NSObject {
     private var webSocket: URLSessionWebSocketTask?
@@ -12,6 +12,7 @@ final class TranscribeStreamer: NSObject {
     private var isOpen: Bool = false
     private var pendingChunks: [Data] = []
     private var negotiatedSampleRate: Int = 16000
+    private var incomingBuffer = Data()
 
     private func signer(region: String) -> TranscribeSigner { TranscribeSigner(region: region) }
 
@@ -40,6 +41,7 @@ final class TranscribeStreamer: NSObject {
         webSocket = task
         isOpen = false
         pendingChunks.removeAll()
+        incomingBuffer.removeAll()
         task.resume()
         listen()
     }
@@ -50,8 +52,21 @@ final class TranscribeStreamer: NSObject {
             pendingChunks.append(data)
             return
         }
-        webSocket.send(.data(data)) { error in
-            if let error { print("ws send error: \(error)") }
+        let frameBytes = max(3200, negotiatedSampleRate / 10 * MemoryLayout<Int16>.size)
+        var offset = 0
+        while offset < data.count {
+            let end = min(offset + frameBytes, data.count)
+            let slice = data.subdata(in: offset..<end)
+            let headers: [String: EventStreamHeaderValue] = [
+                ":message-type": .string("event"),
+                ":event-type": .string("AudioEvent"),
+                ":content-type": .string("application/octet-stream")
+            ]
+            let frame = AWSEventStreamCodec.encode(headers: headers, payload: slice)
+            webSocket.send(.data(frame)) { error in
+                if let error { print("ws send error: \(error)") }
+            }
+            offset = end
         }
     }
 
@@ -63,6 +78,7 @@ final class TranscribeStreamer: NSObject {
         accumulatedText = ""
         isOpen = false
         pendingChunks.removeAll()
+        incomingBuffer.removeAll()
         completion(text)
     }
 
@@ -74,10 +90,12 @@ final class TranscribeStreamer: NSObject {
                 print("ws recv error: \(error)")
             case .success(let message):
                 switch message {
-                case .string(let s):
-                    self.handleTranscriptJSON(text: s)
                 case .data(let d):
-                    if let s = String(data: d, encoding: .utf8) { self.handleTranscriptJSON(text: s) }
+                    self.incomingBuffer.append(d)
+                    let messages = AWSEventStreamCodec.decodeAvailable(from: &self.incomingBuffer)
+                    self.handleEventMessages(messages)
+                case .string(let s):
+                    print("ws text: \(s)")
                 @unknown default:
                     break
                 }
@@ -86,18 +104,26 @@ final class TranscribeStreamer: NSObject {
         }
     }
 
-    private func handleTranscriptJSON(text: String) {
-        guard let data = text.data(using: .utf8) else { return }
-        let decoder = JSONDecoder()
-        if let event = try? decoder.decode(AWSEvent.self, from: data), let tr = event.Transcript {
-            for result in tr.Results where result.IsPartial == false {
-                if let alt = result.Alternatives.first, !alt.Transcript.isEmpty {
-                    if !accumulatedText.isEmpty { accumulatedText += " " }
-                    accumulatedText += alt.Transcript
+    private func handleEventMessages(_ messages: [EventStreamMessage]) {
+        for msg in messages {
+            if case let .string(messageType)? = msg.headers[":message-type"], messageType == "event",
+               case let .string(eventType)? = msg.headers[":event-type"], eventType == "TranscriptEvent" {
+                if let jsonString = String(data: msg.payload, encoding: .utf8), let jsonData = jsonString.data(using: .utf8) {
+                    let decoder = JSONDecoder()
+                    if let env = try? decoder.decode(AWSTranscriptEnvelope.self, from: jsonData), let tr = env.Transcript {
+                        for result in tr.Results where result.IsPartial == false {
+                            if let alt = result.Alternatives.first, !alt.Transcript.isEmpty {
+                                if !accumulatedText.isEmpty { accumulatedText += " " }
+                                accumulatedText += alt.Transcript
+                            }
+                        }
+                    } else {
+                        print("ws transcript json parse error: \(jsonString)")
+                    }
                 }
+            } else if case let .string(mt)? = msg.headers[":message-type"], mt == "exception" {
+                if let s = String(data: msg.payload, encoding: .utf8) { print("ws exception: \(s)") }
             }
-        } else if PreferencesManager.shared.logHandshakeURL {
-            print("ws raw: \(text)")
         }
     }
 }
@@ -106,10 +132,14 @@ extension TranscribeStreamer: URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol `protocol`: String?) {
         print("WebSocket opened, protocol=\(`protocol` ?? "nil")")
         isOpen = true
+        let samples = negotiatedSampleRate / 10
+        let silence = Data(count: samples * MemoryLayout<Int16>.size)
+        sendPcm(silence)
         while !pendingChunks.isEmpty {
             let chunk = pendingChunks.removeFirst()
             sendPcm(chunk)
         }
+        webSocketTask.sendPing { _ in }
     }
 
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {

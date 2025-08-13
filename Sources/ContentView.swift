@@ -76,8 +76,7 @@ final class PushToTalkViewModel: ObservableObject {
         guard !isRecording else { return }
         isRecording = true
         let language = PreferencesManager.shared.languageCode
-        let sr = audio.peekSampleRate()
-        transcriber.start(languageCode: language, sampleRate: sr)
+        transcriber.start(languageCode: language, sampleRate: 16000)
         audio.startStreaming { [weak self] chunk in
             self?.transcriber.sendPcm(chunk)
         }

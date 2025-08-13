@@ -17,6 +17,7 @@ targets:
     deploymentTarget: "13.0"
     sources:
       - path: Sources
+      - path: Sources/AWSEventStream.swift
     resources:
       - path: Resources
     settings:
