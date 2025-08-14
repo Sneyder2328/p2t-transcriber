@@ -80,11 +80,10 @@ final class PushToTalkViewModel: ObservableObject {
             if PreferencesManager.shared.capitalize {
                 text = Self.capitalizeSentences(text)
             }
-            if PreferencesManager.shared.autoPaste {
-                self.injector.paste(text: text)
-            } else {
-                self.injector.copyOnly(text: text)
-            }
+            // Type directly into the focused field for a native feel
+            self.injector.type(text: text)
+            // Also keep on clipboard as a fallback
+            self.injector.copyOnly(text: text)
         }
     }
 
