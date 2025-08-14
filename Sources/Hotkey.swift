@@ -9,7 +9,7 @@ final class Hotkey {
 
     private var isDown: Bool = false
     private var eventHandler: EventHandlerRef?
-    private var modifierMask: UInt32 = PreferencesManager.shared.modifierKey.carbonMask
+    private let requiredModifiersMask: UInt32 = UInt32(cmdKey | controlKey)
 
     private init() {}
 
@@ -18,7 +18,7 @@ final class Hotkey {
     }
 
     func updateModifier(_ choice: ModifierChoice) {
-        modifierMask = choice.carbonMask
+        // No-op: using explicit Command+H
     }
 
     private func installEventHandler() {
@@ -29,9 +29,7 @@ final class Hotkey {
             let hotkey = unmanaged.takeUnretainedValue()
             var modifiers: UInt32 = 0
             GetEventParameter(event, UInt32(kEventParamKeyModifiers), UInt32(typeUInt32), nil, MemoryLayout<UInt32>.size, nil, &modifiers)
-
-            let active = (modifiers & hotkey.modifierMask) != 0
-
+            let active = (modifiers & hotkey.requiredModifiersMask) == hotkey.requiredModifiersMask
             if active && !hotkey.isDown {
                 hotkey.isDown = true
                 hotkey.onPress?()
@@ -39,7 +37,6 @@ final class Hotkey {
                 hotkey.isDown = false
                 hotkey.onRelease?()
             }
-
             return noErr
         }
 
