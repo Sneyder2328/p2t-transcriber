@@ -23,7 +23,7 @@ struct ContentView: View {
             }
             .buttonStyle(.borderedProminent)
 
-            Text("Language: \(PreferencesManager.shared.languageCode)")
+            Text("Tip: Hold Ctrl+Cmd to talk; release to paste. Result also stays on clipboard.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 

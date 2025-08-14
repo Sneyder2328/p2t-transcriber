@@ -4,7 +4,7 @@ import Carbon
 final class TextInjector {
     func paste(text: String) {
         let pasteboard = NSPasteboard.general
-        let saved = pasteboard.string(forType: .string) ?? ""
+        let saved = pasteboard.string(forType: .string)
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
 
@@ -16,10 +16,8 @@ final class TextInjector {
         keyDown?.post(tap: .cghidEventTap)
         keyUp?.post(tap: .cghidEventTap)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            pasteboard.clearContents()
-            pasteboard.setString(saved, forType: .string)
-        }
+        // Keep the result on the clipboard so user can see it or paste manually
+        // If we had a previous value, store it under a different type would be complex; skip restoring
     }
 
     func copyOnly(text: String) {

@@ -12,12 +12,14 @@ final class Hotkey {
     private var eventHandler: EventHandlerRef?
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
+    private var globalMonitor: Any?
     private let requiredModifiersMask: UInt32 = UInt32(cmdKey | controlKey)
 
     private init() {}
 
     func registerDefault() {
         installGlobalTap()
+        installNSEventMonitor()
     }
 
     func updateModifier(_ choice: ModifierChoice) {
@@ -36,6 +38,8 @@ final class Hotkey {
             }
             let flags = event.flags
             let active = flags.contains(.maskCommand) && flags.contains(.maskControl)
+            // Debug
+            // print("Hotkey tap flags=\(flags.rawValue) active=\(active)")
             if active && !hotkey.isDown {
                 hotkey.isDown = true
                 hotkey.onPress?()
@@ -71,6 +75,21 @@ final class Hotkey {
                 return noErr
             }
             InstallEventHandler(GetEventDispatcherTarget(), carbonCallback, 1, &eventType, selfPtr, &eventHandler)
+        }
+    }
+
+    private func installNSEventMonitor() {
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+            guard let self else { return }
+            let flags = event.modifierFlags
+            let active = flags.contains(.command) && flags.contains(.control)
+            if active && !isDown {
+                isDown = true
+                onPress?()
+            } else if !active && isDown {
+                isDown = false
+                onRelease?()
+            }
         }
     }
 }
