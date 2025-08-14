@@ -47,6 +47,10 @@ final class AudioInputManager {
             let frames = Int(outBuffer.frameLength)
             guard frames > 0, let channel = outBuffer.int16ChannelData?.pointee else { return }
             let data = Data(bytes: channel, count: frames * MemoryLayout<Int16>.size)
+            // Debug: print tiny notice every ~1s worth of chunks (throttle via frame count)
+            if frames > 0 && frames >= 1600 { // approx 0.1s at 16kHz
+                // avoid spamming; rely on Transcribe logs for first chunk confirmation
+            }
             onPcmChunk(data)
         }
 
