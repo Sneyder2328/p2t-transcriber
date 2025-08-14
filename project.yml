@@ -10,6 +10,11 @@ settings:
     INFOPLIST_FILE: Resources/Info.plist
     ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     OTHER_LDFLAGS: "$(inherited) -framework Carbon -framework AVFoundation -framework ApplicationServices -framework ServiceManagement"
+packages:
+  aws-sdk-swift:
+    url: https://github.com/awslabs/aws-sdk-swift.git
+    from: 0.36.1
+
 targets:
   P2TTranscriber:
     type: application
@@ -20,6 +25,11 @@ targets:
       - path: Sources/AWSEventStream.swift
     resources:
       - path: Resources
+    dependencies:
+      - package: aws-sdk-swift
+        product: AWSTranscribeStreaming
+      - package: aws-sdk-swift
+        product: AWSClientRuntime
     settings:
       base:
         PRODUCT_NAME: P2TTranscriber

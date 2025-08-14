@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -13,12 +13,15 @@
 		543AC128AF8B57A61AFE515A /* AudioInputManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44227CE9E73221D412230390 /* AudioInputManager.swift */; };
 		75F1E07AA18AC70ABAD3FE69 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 093588C48F1CBFD788896318 /* PreferencesView.swift */; };
 		A13BA2A597519AB2BDE45148 /* LoginItemManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4145D5320CF09996E8061525 /* LoginItemManager.swift */; };
+		A7F83A407505D3D90FBE9771 /* AWSClientRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 83CAC254FB0C6201E66329F1 /* AWSClientRuntime */; };
+		A8E6A207464AF0EB8E8CF9D8 /* AWSTranscribeStreaming in Frameworks */ = {isa = PBXBuildFile; productRef = 3606E74C1B4F551870D495E1 /* AWSTranscribeStreaming */; };
 		AAC5E2596B9E5A9DFC1A1651 /* P2TTranscriberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A052DCFFAA3003834507C1C6 /* P2TTranscriberApp.swift */; };
 		ADA86CB1F3B86260BF653753 /* TranscribeSigner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 659301DC2423D8901A980738 /* TranscribeSigner.swift */; };
 		AE7AC40F1D7A9DD9B78AE084 /* Hotkey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B3C317A34C961CEB33A26F8 /* Hotkey.swift */; };
 		BB802164966F2F0C27238B99 /* TranscribeStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7D6B700C88D152777EFA92 /* TranscribeStreamer.swift */; };
 		CE1556075DC110E9EBC4A9BE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E64B3671AD495B1AB6C91B95 /* ContentView.swift */; };
 		D20D514ACA782B9CF6394A7E /* AWSEventStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C7E9ABC2AFBD4272F0BB98 /* AWSEventStream.swift */; };
+		D8493AE12B3B052B6DEEDEA6 /* TranscribeSDKStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2886299DEDEF2F4618134E2 /* TranscribeSDKStreamer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,9 +36,22 @@
 		A052DCFFAA3003834507C1C6 /* P2TTranscriberApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P2TTranscriberApp.swift; sourceTree = "<group>"; };
 		B6531DEAD93876480538E77F /* P2TTranscriber.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = P2TTranscriber.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CCB45CD7D727AADD8C8F8605 /* CredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialsStore.swift; sourceTree = "<group>"; };
+		D2886299DEDEF2F4618134E2 /* TranscribeSDKStreamer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscribeSDKStreamer.swift; sourceTree = "<group>"; };
 		E64B3671AD495B1AB6C91B95 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		FF7D6B700C88D152777EFA92 /* TranscribeStreamer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscribeStreamer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B6BD19D90A14DE5BC17E3ECA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A8E6A207464AF0EB8E8CF9D8 /* AWSTranscribeStreaming in Frameworks */,
+				A7F83A407505D3D90FBE9771 /* AWSClientRuntime in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		3DB7F14AC9DC04AB4DBAD628 = {
@@ -59,6 +75,7 @@
 				68D3AD32737AEF32829AE410 /* PreferencesManager.swift */,
 				093588C48F1CBFD788896318 /* PreferencesView.swift */,
 				4D067BBC113E4771036C649A /* TextInjector.swift */,
+				D2886299DEDEF2F4618134E2 /* TranscribeSDKStreamer.swift */,
 				659301DC2423D8901A980738 /* TranscribeSigner.swift */,
 				FF7D6B700C88D152777EFA92 /* TranscribeStreamer.swift */,
 			);
@@ -81,6 +98,7 @@
 			buildConfigurationList = DDAEF97E5CF819B1476C635E /* Build configuration list for PBXNativeTarget "P2TTranscriber" */;
 			buildPhases = (
 				44C13493ED6559360AC3F505 /* Sources */,
+				B6BD19D90A14DE5BC17E3ECA /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -88,7 +106,8 @@
 			);
 			name = P2TTranscriber;
 			packageProductDependencies = (
-				D35881AD2E4CB296005EEFBE /* AwsCommonRuntimeKit */,
+				3606E74C1B4F551870D495E1 /* AWSTranscribeStreaming */,
+				83CAC254FB0C6201E66329F1 /* AWSClientRuntime */,
 			);
 			productName = P2TTranscriber;
 			productReference = B6531DEAD93876480538E77F /* P2TTranscriber.app */;
@@ -119,8 +138,9 @@
 			mainGroup = 3DB7F14AC9DC04AB4DBAD628;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				D35881AC2E4CB296005EEFBE /* XCRemoteSwiftPackageReference "aws-crt-swift" */,
+				D469E4D1208F59275446BF6D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */,
 			);
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -144,6 +164,7 @@
 				43682AA677C333B82039E565 /* PreferencesManager.swift in Sources */,
 				75F1E07AA18AC70ABAD3FE69 /* PreferencesView.swift in Sources */,
 				1606DBD1EBD7F8DC8AA07C57 /* TextInjector.swift in Sources */,
+				D8493AE12B3B052B6DEEDEA6 /* TranscribeSDKStreamer.swift in Sources */,
 				ADA86CB1F3B86260BF653753 /* TranscribeSigner.swift in Sources */,
 				BB802164966F2F0C27238B99 /* TranscribeStreamer.swift in Sources */,
 			);
@@ -210,17 +231,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-framework",
-					Carbon,
-					"-framework",
-					AVFoundation,
-					"-framework",
-					ApplicationServices,
-					"-framework",
-					ServiceManagement,
-				);
+				OTHER_LDFLAGS = "$(inherited) -framework Carbon -framework AVFoundation -framework ApplicationServices -framework ServiceManagement";
 				PRODUCT_BUNDLE_IDENTIFIER = com.sneyder.p2t;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -298,17 +309,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-framework",
-					Carbon,
-					"-framework",
-					AVFoundation,
-					"-framework",
-					ApplicationServices,
-					"-framework",
-					ServiceManagement,
-				);
+				OTHER_LDFLAGS = "$(inherited) -framework Carbon -framework AVFoundation -framework ApplicationServices -framework ServiceManagement";
 				PRODUCT_BUNDLE_IDENTIFIER = com.sneyder.p2t;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -359,21 +360,26 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		D35881AC2E4CB296005EEFBE /* XCRemoteSwiftPackageReference "aws-crt-swift" */ = {
+		D469E4D1208F59275446BF6D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/awslabs/aws-crt-swift.git";
+			repositoryURL = "https://github.com/awslabs/aws-sdk-swift.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.30.0;
+				minimumVersion = 0.36.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		D35881AD2E4CB296005EEFBE /* AwsCommonRuntimeKit */ = {
+		3606E74C1B4F551870D495E1 /* AWSTranscribeStreaming */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D35881AC2E4CB296005EEFBE /* XCRemoteSwiftPackageReference "aws-crt-swift" */;
-			productName = AwsCommonRuntimeKit;
+			package = D469E4D1208F59275446BF6D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSTranscribeStreaming;
+		};
+		83CAC254FB0C6201E66329F1 /* AWSClientRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D469E4D1208F59275446BF6D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSClientRuntime;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

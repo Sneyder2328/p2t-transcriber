@@ -30,17 +30,6 @@ struct ContentView: View {
             Divider()
 
             HStack {
-                if #available(macOS 14.0, *) {
-                    SettingsLink { Text("Preferences…") }
-                } else {
-                    Button("Preferences…") {
-                        if #available(macOS 13.0, *) {
-                            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                        } else {
-                            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
-                        }
-                    }
-                }
                 Spacer()
                 Toggle("Start at login", isOn: $loginAtStart)
                     .toggleStyle(.switch)
@@ -58,7 +47,7 @@ final class PushToTalkViewModel: ObservableObject {
     @Published var isRecording: Bool = false
 
     private let audio = AudioInputManager()
-    private let transcriber = TranscribeStreamer()
+    private let transcriber = TranscribeSDKStreamer()
     private let injector = TextInjector()
 
     func setupHotkey() {

@@ -33,11 +33,11 @@ final class TranscribeStreamer: NSObject {
         if PreferencesManager.shared.logHandshakeURL { print("Presigned URL: \(url.absoluteString)") }
 
         let config = URLSessionConfiguration.default
-        config.httpAdditionalHeaders = [
-            "Origin": "https://transcribestreaming.\(region).amazonaws.com"
-        ]
         urlSession = URLSession(configuration: config, delegate: self, delegateQueue: OperationQueue())
-        let task = urlSession.webSocketTask(with: url, protocols: ["aws.transcribe"]) // negotiate subprotocol
+        var request = URLRequest(url: url)
+        request.setValue("aws.transcribe", forHTTPHeaderField: "Sec-WebSocket-Protocol")
+        request.setValue("https://transcribestreaming.\(region).amazonaws.com", forHTTPHeaderField: "Origin")
+        let task = urlSession.webSocketTask(with: request)
         webSocket = task
         isOpen = false
         pendingChunks.removeAll()

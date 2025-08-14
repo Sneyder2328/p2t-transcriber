@@ -10,10 +10,6 @@ struct P2TTranscriberApp: App {
                 .frame(width: 320)
         }
         .menuBarExtraStyle(.window)
-
-        Settings {
-            PreferencesView()
-        }
     }
 }
 
